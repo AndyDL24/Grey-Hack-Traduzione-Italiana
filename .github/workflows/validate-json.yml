@@ -11,16 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
       - name: Verify file existence and validate JSON syntax
         run: |
-          # Trova automaticamente il file custom_lang.json ovunque si trovi (es. dentro la cartella della versione)
           JSON_FILE=$(find . -maxdepth 2 -name "custom_lang.json")
           
           if [ -z "$JSON_FILE" ]; then
@@ -39,3 +38,4 @@ jobs:
               print(f'Errore di sintassi JSON: {e}')
               sys.exit(1)
           "
+          
