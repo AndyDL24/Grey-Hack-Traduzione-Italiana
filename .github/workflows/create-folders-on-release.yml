@@ -8,7 +8,7 @@ on:
       source_path:
         description: "Path to the source file"
         required: true
-        default: "custom_lang.json"
+        default: "[Nightly] Grey Hack/custom_lang.json"
 
 jobs:
   create-folders-and-add-file:
@@ -24,8 +24,9 @@ jobs:
       - name: Read version file
         id: read_version
         run: |
-          if [ -f "version" ]; then
-            VERSION=$(cat version | tr -d '[:space:]')
+          VERSION_FILE="[Nightly] Grey Hack/version"
+          if [ -f "$VERSION_FILE" ]; then
+            VERSION=$(cat "$VERSION_FILE" | tr -d '[:space:]')
           else
             VERSION="latest"
           fi
@@ -36,7 +37,7 @@ jobs:
         run: |
           SOURCE_FILE="${{ github.event.inputs.source_path }}"
           if [ -z "$SOURCE_FILE" ]; then
-            SOURCE_FILE="custom_lang.json"
+            SOURCE_FILE="[Nightly] Grey Hack/custom_lang.json"
           fi
           
           if [ ! -f "$SOURCE_FILE" ]; then
@@ -51,7 +52,7 @@ jobs:
 
       - name: Copy file to new directory
         run: |
-          cp "$SOURCE_FILE" "Appdata/LocalLow/Loading Home/Grey Hack/Translation/custom_lang.json"
+          cp "[Nightly] Grey Hack/custom_lang.json" "Appdata/LocalLow/Loading Home/Grey Hack/Translation/custom_lang.json"
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
@@ -60,4 +61,4 @@ jobs:
           branch: main
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
-
+          
