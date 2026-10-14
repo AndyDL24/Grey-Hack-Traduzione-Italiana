@@ -48,34 +48,20 @@ jobs:
           fi
           echo "SOURCE_FILE=$SOURCE_FILE" >> $GITHUB_ENV
 
-      - name: Create directories and prepare file structure in repository
+      - name: Create ZIP package structure safely
         run: |
-          mkdir -p "Appdata/LocalLow/Loading Home/Grey Hack/Translation"
-          cp "$SOURCE_FILE" "Appdata/LocalLow/Loading Home/Grey Hack/Translation/custom_lang.json"
-
-      - name: Commit and push folder changes to main
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: update translation folders for release version ${{ steps.read_version.outputs.version }}"
-          branch: main
-          commit_user_name: "github-actions[bot]"
-          commit_user_email: "github-actions[bot]@users.noreply.github.com"
-
-      - name: Prepare ZIP package structure
-        run: |
-          # Crea una cartella temporanea pulita per lo zip
-          mkdir -p package_temp
-          
-          # Copia la struttura delle cartelle e il file custom_lang.json
+          # Crea una cartella temporanea isolata per assemblare lo zip senza sporcare il repo
           mkdir -p package_temp/AppData/LocalLow/"Loading Home"/"Grey Hack"/Translation
+          
+          # Copia il file di traduzione nella struttura corretta dentro la cartella temporanea
           cp "$SOURCE_FILE" package_temp/AppData/LocalLow/"Loading Home"/"Grey Hack"/Translation/custom_lang.json
           
-          # Copia README, LICENSE e VERSION nella radice dello zip (se presenti)
+          # Copia i file di servizio nella radice dello zip
           [ -f README.md ] && cp README.md package_temp/
           [ -f LICENSE ] && cp LICENSE package_temp/
           [ -f "[Nightly] Grey Hack/version" ] && cp "[Nightly] Grey Hack/version" package_temp/VERSION
 
-          # Crea l'archivio ZIP finale partendo dalla cartella temporanea
+          # Crea l'archivio ZIP finale
           cd package_temp
           zip -r "../Grey-Hack-Italian-Translation-${{ steps.read_version.outputs.version }}.zip" .
           cd ..
