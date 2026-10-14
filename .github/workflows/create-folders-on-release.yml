@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Necessario per leggere lo storico completo dei commit per le release notes
+          fetch-depth: 0
 
       - name: Read version file
         id: read_version
@@ -48,7 +48,7 @@ jobs:
           fi
           echo "SOURCE_FILE=$SOURCE_FILE" >> $GITHUB_ENV
 
-      - name: Create directories and prepare file structure
+      - name: Create directories and prepare file structure in repository
         run: |
           mkdir -p "Appdata/LocalLow/Loading Home/Grey Hack/Translation"
           cp "$SOURCE_FILE" "Appdata/LocalLow/Loading Home/Grey Hack/Translation/custom_lang.json"
@@ -61,16 +61,30 @@ jobs:
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create ZIP archive for release
+      - name: Prepare ZIP package structure
         run: |
-          # Crea l'archivio ZIP strutturato con le cartelle del gioco
-          zip -r "Grey-Hack-Italian-Translation-${{ steps.read_version.outputs.version }}.zip" Appdata/
+          # Crea una cartella temporanea pulita per lo zip
+          mkdir -p package_temp
+          
+          # Copia la struttura delle cartelle e il file custom_lang.json
+          mkdir -p package_temp/AppData/LocalLow/"Loading Home"/"Grey Hack"/Translation
+          cp "$SOURCE_FILE" package_temp/AppData/LocalLow/"Loading Home"/"Grey Hack"/Translation/custom_lang.json
+          
+          # Copia README, LICENSE e VERSION nella radice dello zip (se presenti)
+          [ -f README.md ] && cp README.md package_temp/
+          [ -f LICENSE ] && cp LICENSE package_temp/
+          [ -f "[Nightly] Grey Hack/version" ] && cp "[Nightly] Grey Hack/version" package_temp/VERSION
+
+          # Crea l'archivio ZIP finale partendo dalla cartella temporanea
+          cd package_temp
+          zip -r "../Grey-Hack-Italian-Translation-${{ steps.read_version.outputs.version }}.zip" .
+          cd ..
 
       - name: Upload ZIP asset and generate release notes
         uses: softprops/action-gh-release@v2
         with:
           files: Grey-Hack-Italian-Translation-${{ steps.read_version.outputs.version }}.zip
-          generate_release_notes: true # Genera automaticamente la lista di tutti i commit e changelog dall'ultima release
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
