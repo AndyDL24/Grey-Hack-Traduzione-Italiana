@@ -1,4 +1,4 @@
-name: Validate JSON
+name: Validate All JSON Files
 
 on:
   push:
@@ -18,24 +18,36 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Verify file existence and validate JSON syntax
+      - name: Find and validate all JSON files using pathlib (Strict compliance)
         run: |
-          JSON_FILE=$(find . -maxdepth 2 -name "custom_lang.json")
-          
-          if [ -z "$JSON_FILE" ]; then
-            echo "Errore: Il file custom_lang.json non è stato trovato!"
-            exit 1
-          fi
-
-          echo "Trovato file in: $JSON_FILE"
           python3 -c "
-          import json, sys
-          try:
-              with open('$JSON_FILE', 'r', encoding='utf-8') as f:
-                  json.load(f)
-              print('Successo: Il file JSON è formattato correttamente.')
-          except Exception as e:
-              print(f'Errore di sintassi JSON: {e}')
-              sys.exit(1)
+          from pathlib import Path
+          import json
+          import sys
+
+          def main() -> None:
+              failed = False
+              print('Inizio scansione di tutti i file JSON nel repository...')
+
+              for file_path in Path('.').rglob('*.json'):
+                  if '.git' in file_path.parts:
+                      continue
+                  
+                  print(f'Analizzando: {file_path} ... ', end='')
+                  try:
+                      with file_path.open('r', encoding='utf-8') as f:
+                          json.load(f)
+                      print('OK')
+                  except (json.JSONDecodeError, OSError) as e:
+                      print(f'ERRORE!\n  Dettagli: {e}')
+                      failed = True
+
+              if failed:
+                  print('\n[Fallito] Uno o più file JSON contengono errori di sintassi.')
+                  sys.exit(1)
+              else:
+                  print('\n[Successo] Tutti i file JSON trovati sono formattati correttamente.')
+
+          if __name__ == '__main__':
+              main()
           "
-          
