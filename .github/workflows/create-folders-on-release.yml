@@ -1,4 +1,4 @@
-name: Create Folders on Release
+name: Create Folders and Release Asset
 
 on:
   release:
@@ -11,7 +11,7 @@ on:
         default: "[Nightly] Grey Hack/custom_lang.json"
 
 jobs:
-  create-folders-and-add-file:
+  create-folders-and-release:
     runs-on: ubuntu-latest
 
     permissions:
@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Necessario per leggere lo storico completo dei commit per le release notes
 
       - name: Read version file
         id: read_version
@@ -46,19 +48,29 @@ jobs:
           fi
           echo "SOURCE_FILE=$SOURCE_FILE" >> $GITHUB_ENV
 
-      - name: Create directories
+      - name: Create directories and prepare file structure
         run: |
           mkdir -p "Appdata/LocalLow/Loading Home/Grey Hack/Translation"
+          cp "$SOURCE_FILE" "Appdata/LocalLow/Loading Home/Grey Hack/Translation/custom_lang.json"
 
-      - name: Copy file to new directory
-        run: |
-          cp "[Nightly] Grey Hack/custom_lang.json" "Appdata/LocalLow/Loading Home/Grey Hack/Translation/custom_lang.json"
-
-      - name: Commit and push changes
+      - name: Commit and push folder changes to main
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update translation folders for release version ${{ steps.read_version.outputs.version }}"
           branch: main
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create ZIP archive for release
+        run: |
+          # Crea l'archivio ZIP strutturato con le cartelle del gioco
+          zip -r "Grey-Hack-Italian-Translation-${{ steps.read_version.outputs.version }}.zip" Appdata/
+
+      - name: Upload ZIP asset and generate release notes
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Grey-Hack-Italian-Translation-${{ steps.read_version.outputs.version }}.zip
+          generate_release_notes: true # Genera automaticamente la lista di tutti i commit e changelog dall'ultima release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
