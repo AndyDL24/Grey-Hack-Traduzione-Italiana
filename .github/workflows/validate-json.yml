@@ -1,0 +1,40 @@
+name: Validate JSON on PR
+
+on:
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate-json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Verify file existence and validate JSON syntax
+        run: |
+          # Trova automaticamente il file custom_lang.json dentro la cartella specifica
+          JSON_FILE=$(find . -maxdepth 2 -name "custom_lang.json")
+          
+          if [ -z "$JSON_FILE" ]; then
+            echo "Errore: Il file custom_lang.json non è stato trovato!"
+            exit 1
+          fi
+
+          echo "Trovato file in: $JSON_FILE"
+          python3 -c "
+          import json, sys
+          try:
+              with open('$JSON_FILE', 'r', encoding='utf-8') as f:
+                  json.load(f)
+              print('Successo: Il file JSON è formattato correttamente.')
+          except Exception as e:
+              print(f'Errore di sintassi JSON: {e}')
+              sys.exit(1)
+          "
+          
