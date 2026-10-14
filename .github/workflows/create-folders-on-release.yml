@@ -1,4 +1,4 @@
-name: Create folders and add file on release
+name: Create Folders on Release
 
 on:
   release:
@@ -6,24 +6,44 @@ on:
   workflow_dispatch:
     inputs:
       source_path:
-        description: 'Path to the source file'
+        description: "Path to the source file"
         required: true
-        default: '[Nightly] Grey Hack V0.8.4732a/custom_lang.json'
+        default: "custom_lang.json"
 
 jobs:
   create-folders-and-add-file:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Read version file
+        id: read_version
+        run: |
+          if [ -f "version" ]; then
+            VERSION=$(cat version | tr -d '[:space:]')
+          else
+            VERSION="latest"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
 
       - name: Verify source path
         run: |
-          if [ ! -f "${{ github.event.inputs.source_path }}" ]; then
-            echo "Source file does not exist: ${{ github.event.inputs.source_path }}"
+          SOURCE_FILE="${{ github.event.inputs.source_path }}"
+          if [ -z "$SOURCE_FILE" ]; then
+            SOURCE_FILE="custom_lang.json"
+          fi
+          
+          if [ ! -f "$SOURCE_FILE" ]; then
+            echo "Error: Source file does not exist: $SOURCE_FILE"
             exit 1
           fi
+          echo "SOURCE_FILE=$SOURCE_FILE" >> $GITHUB_ENV
 
       - name: Create directories
         run: |
@@ -31,26 +51,13 @@ jobs:
 
       - name: Copy file to new directory
         run: |
-          cp "${{ github.event.inputs.source_path }}" "Appdata/LocalLow/Loading Home/Grey Hack/Translation/custom_lang.json"
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Debug Git Status
-        run: |
-          git status
+          cp "$SOURCE_FILE" "Appdata/LocalLow/Loading Home/Grey Hack/Translation/custom_lang.json"
 
       - name: Commit and push changes
-        run: |
-          git add .
-          git status
-          git commit -m "Create directories and add custom_lang.json for new release"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update translation folders for release version ${{ steps.read_version.outputs.version }}"
+          branch: main
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
 
-      - name: Debug Post Push
-        run: |
-          echo "Completed Git operations"
