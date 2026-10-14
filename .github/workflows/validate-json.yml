@@ -1,8 +1,10 @@
-name: Validate JSON on PR
+name: Validate JSON
 
 on:
+  push:
+    branches: [ "**" ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ "**" ]
 
 jobs:
   validate-json:
@@ -18,7 +20,7 @@ jobs:
 
       - name: Verify file existence and validate JSON syntax
         run: |
-          # Trova automaticamente il file custom_lang.json dentro la cartella specifica
+          # Trova automaticamente il file custom_lang.json ovunque si trovi (es. dentro la cartella della versione)
           JSON_FILE=$(find . -maxdepth 2 -name "custom_lang.json")
           
           if [ -z "$JSON_FILE" ]; then
@@ -37,4 +39,3 @@ jobs:
               print(f'Errore di sintassi JSON: {e}')
               sys.exit(1)
           "
-          
